@@ -1,0 +1,11 @@
+# Bitcoin Observatory
+
+A responsive, buildless Bitcoin dashboard with daily historical prices, an ordinary least-squares power-law fit in log space, monthly CPI adjustment, drawdowns, live Coinbase spot quotes, and downloadable CSV/SVG charts.
+
+Serve `dist/` with any static HTTP server. There is no build step or production package dependency. The deployment manifest is `.openai/hosting.json`.
+
+Historical dataset: Coin Metrics Community Data, daily observations from 2010-07-18 through 2026-05-23. CPI source: BLS CUUR0000SA0, monthly observations from January 2010 through August 2026. Missing CPI months use the last available prior observation. Coinbase Exchange spot quotes and candles refresh every minute in the browser; failure is visibly labeled and falls back to a recent cached quote or the historical snapshot. A spot quote does not extend the historical series.
+
+The default envelope is calibrated to contain every loaded historical price, including record-setting cycle peaks; it is not a forecast interval. Optional statistical bands use historical residual standard deviations and may exclude peaks. The upper curve fits record-setting local maxima within ±365 daily observations, then shifts to clear the maximum historical residual. The lower curve shifts the central fit below its minimum historical residual. Both use a 0.005-log-unit margin. Recent spot charts fetch public Coinbase Exchange OHLC data (5-minute, hourly, 6-hour, daily resolutions) and support zoom, pan, crosshairs, line/candle display, and CSV export. Unavailable market data falls back to timestamped saved candles in `spot-snapshot.json`. The methodology dialog documents the exact formulas and sources.
+
+Chart interactions: both charts support wheel/pinch and button zoom, drag/arrow-key pan, and reset. The spot chart pins a candle on click/tap; a second selection shows the absolute and percentage change between two closes. Enter selects the hovered or center point and Escape clears. The long-term tooltip and pinned panel show the active envelope’s upper and lower prices alongside the observed price, fitted trend, and multiplier, including CPI adjustment when selected. Future model dates display no observed price or multiplier.
