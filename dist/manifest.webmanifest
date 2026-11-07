@@ -1,0 +1,10 @@
+{
+  "name": "Bitcoin Observatory",
+  "short_name": "Observatory",
+  "description": "Bitcoin price, network, supply and long-term perspective in one place.",
+  "start_url": "/#overview",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
