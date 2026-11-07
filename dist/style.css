@@ -214,3 +214,4 @@
 }
 @media(min-width:721px){.sheet{display:none}}
 @media(max-width:720px){#blocks-table{min-width:0}#blocks-table :is(th,td):is(:nth-child(4),:nth-child(5),:nth-child(7)){display:none}#blocks-table :is(th,td){padding-left:5px;padding-right:5px}#blocks-table td:nth-child(2){white-space:normal}}
+@media(max-width:720px){#halving-table{min-width:0}#halving-table :is(th,td):is(:nth-child(2),:nth-child(5)){display:none}#halving-table :is(th,td){padding-left:5px;padding-right:5px}}
