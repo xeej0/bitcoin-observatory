@@ -175,7 +175,7 @@
   let ahead = 0; for (const [fr, vs] of hist) if (fr > r) ahead += vs;
   const blocks = Math.floor(ahead / 1e6) + 1, mins = blocks * blockMs() / 60000;
   $('queue-rate-label').textContent = rate(r) + ' sat/vB';
-  $('queue-rate').style.background = `linear-gradient(90deg,${feeColor(r)} ${Number($('queue-rate').value) / 10}%,#303844 ${Number($('queue-rate').value) / 10}%)`;
+  $('queue-rate').style.background = `linear-gradient(90deg,${feeColor(r)} ${Number($('queue-rate').value) / 10}%,#303844 ${Number($('queue-rate').value) / 10}%) center / 100% 4px no-repeat`;
   const below = net.fast.fees && r < net.fast.fees.minimumFee;
   $('queue-result').innerHTML = below ? `<strong class="down">Below the minimum relay fee</strong><p>Most nodes would not accept a transaction this cheap. Use at least ${rate(net.fast.fees.minimumFee)} sat/vB.</p>` :
    `<div><span>Queued ahead of you</span><strong>${(ahead / 1e6).toFixed(2)} vMB</strong></div><div><span>Likely block</span><strong>${blocks === 1 ? 'Next block' : '#' + blocks + ' in line'}</strong></div><div><span>Estimated wait</span><strong>${blocks === 1 ? '~10 min' : '~' + dur(mins * 60000)}</strong></div><div><span>Simple payment cost</span><strong>${p ? usd(r * 141 / COIN * p) : nf(r * 141) + ' sats'}</strong></div>`;
@@ -487,6 +487,14 @@
  $('block-rail').addEventListener('pointerdown', () => $('block-rail').dataset.touched = 1);
  $('block-rail').addEventListener('wheel', () => $('block-rail').dataset.touched = 1, { passive: true });
  $('queue-rate').addEventListener('input', renderQueue);
+ /* Drag anywhere on the bar (iOS Safari will not move a range input from a touch on its track). */
+ (() => {
+  const el = $('queue-rate'); let dragging = false;
+  const setFrom = e => { const r = el.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); el.value = Math.round(f * 1000); renderQueue(); };
+  el.addEventListener('pointerdown', e => { dragging = true; el.setPointerCapture?.(e.pointerId); setFrom(e); e.preventDefault(); });
+  el.addEventListener('pointermove', e => { if (dragging) setFrom(e); });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(t, () => dragging = false);
+ })();
  document.addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (!b) return; window.setView?.(b.dataset.goto); window.scrollTo({ top: 0, behavior: 'smooth' }); });
  window.onNetworkView = () => { if (net.fastAt) requestAnimationFrame(renderAll); };
  const prevQuote = window.onSpotQuote; // spot.js loads first; chain onto its hook
