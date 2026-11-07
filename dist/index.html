@@ -2,24 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b0d10"><meta name="description" content="See the bigger picture of Bitcoin. Explore daily price history, a long-term power-law model, cycle drawdowns and inflation-adjusted prices.">
+<meta name="theme-color" content="#0b0d10"><meta name="description" content="Bitcoin, made easy to digest. Live price, mempool and fees, blocks and mining, supply and halvings, Lightning, plus a long-term power-law model and a plain-language guide.">
 <title>Bitcoin Observatory — See the bigger picture</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css"><script src="chart-gestures.js" defer></script><script src="app.js" defer></script><script src="spot.js" defer></script>
+<link rel="stylesheet" href="style.css"><script src="chart-gestures.js" defer></script><script src="app.js" defer></script><script src="spot.js" defer></script><script src="network.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard</a>
 <aside class="sidebar">
  <a class="brand" href="#overview"><span class="brandmark">₿</span><span>Observatory<span class="brand-sub">BITCOIN • THE LONG VIEW</span></span></a>
- <div class="nav-label">WORKSPACE</div>
  <nav aria-label="Main navigation">
+ <div class="nav-label">MARKET</div>
  <button class="nav-item active" data-view="overview"><i data-icon="grid"></i>Overview</button>
  <button class="nav-item" data-view="spot"><i data-icon="bitcoin"></i>Spot price</button>
  <button class="nav-item" data-view="power"><i data-icon="trend"></i>Power law<span class="nav-tag">β</span></button>
  <button class="nav-item" data-view="adjusted"><i data-icon="layers"></i>Adjusted price</button>
  <button class="nav-item" data-view="cycles"><i data-icon="activity"></i>Market cycles</button>
+ <div class="nav-label">NETWORK</div>
+ <button class="nav-item" data-view="mempool"><i data-icon="queue"></i>Mempool &amp; fees<span class="live-pip" title="Live data"></span></button>
+ <button class="nav-item" data-view="mining"><i data-icon="cpu"></i>Blocks &amp; mining</button>
+ <button class="nav-item" data-view="supply"><i data-icon="hourglass"></i>Supply &amp; halving</button>
+ <button class="nav-item" data-view="lightning"><i data-icon="zap"></i>Lightning</button>
+ <div class="nav-label">LEARN</div>
+ <button class="nav-item" data-view="learn"><i data-icon="spark"></i>Bitcoin 101</button>
  </nav>
  <div class="sidebar-note"><div class="orbit"><span>₿</span></div><strong>Zoom out. Think ahead.</strong><p>A little perspective goes a long way.</p><button class="text-button" id="method-side">Explore the methodology <span>↗</span></button></div>
  <div class="sidebar-bottom"><button class="nav-item" id="export-side"><i data-icon="download"></i>Export data</button><button class="nav-item" id="method-nav"><i data-icon="book"></i>Methodology</button><div class="network">Bitcoin / USD<span class="network-tag">RESEARCH</span></div></div>
@@ -28,15 +35,124 @@
  <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div><div class="top-actions"><span id="utc-time" class="clock"></span><span class="top-separator"></span><button class="icon-button" id="help" aria-label="Open methodology"><i data-icon="help"></i></button><span class="avatar">OB</span></div></header>
  <main id="main-content" tabindex="-1">
  <div class="page-heading"><div><div class="eyebrow"><span class="tiny-square"></span> THE LONG VIEW</div><h1 id="page-title">See the bigger picture<span>.</span></h1><p id="page-subtitle">Bitcoin, beyond the daily noise. Track the price. Understand the trajectory.</p></div><button class="button" id="refresh"><i data-icon="refresh"></i><span>Refresh live data</span></button></div>
- <div class="market-bar"><span class="bitcoin-small">₿</span><strong>Bitcoin</strong><span class="muted">BTC / USD</span><span class="market-divider"></span><span class="status-dot"></span><span id="quote-status">Loading market data</span><span class="market-right">One asset. A different perspective.</span></div>
- <p class="data-freshness" id="data-freshness" role="status">Loading historical data coverage…</p>
- <section class="metrics" aria-label="Bitcoin indicators">
+ <div class="market-bar"><span class="bitcoin-small">₿</span><strong>Bitcoin</strong><span class="muted">BTC / USD</span><span class="market-divider"></span><span class="status-dot"></span><span id="quote-status">Loading market data</span><span class="market-right" id="net-bar-status">Connecting to the network…</span></div>
+ <p class="data-freshness" data-views="overview spot power adjusted cycles" id="data-freshness" role="status">Loading historical data coverage…</p>
+ <section class="metrics" data-views="overview spot power adjusted cycles" aria-label="Bitcoin indicators">
  <article class="metric"><div class="metric-label">BITCOIN PRICE <i data-icon="bitcoin"></i></div><div class="metric-value" id="price-value">—</div><div class="metric-bottom"><span class="green" id="price-note">Connecting to Coinbase</span><svg class="sparkline" id="price-spark" viewBox="0 0 120 28" aria-hidden="true"></svg></div></article>
  <article class="metric"><div class="metric-label">POWER LAW TREND <i data-icon="trend"></i></div><div class="metric-value" id="trend-value">—</div><div class="metric-bottom"><span><span class="legend-dot blue"></span> Fitted long-term baseline</span><svg class="sparkline" id="trend-spark" viewBox="0 0 120 28" aria-hidden="true"></svg></div></article>
  <article class="metric"><div class="metric-label">PRICE / TREND <i data-icon="compass"></i></div><div class="metric-value" id="ratio-value">—</div><div class="metric-bottom"><span id="ratio-note">At historical cutoff</span><div class="mini-range"><span id="ratio-marker"></span></div></div></article>
  <article class="metric"><div class="metric-label">CIRCULATING SUPPLY <i data-icon="globe"></i></div><div class="metric-value" id="supply-value">—</div><div class="metric-bottom"><span id="supply-note">of 21 million BTC</span><span class="supply-icon">◔</span></div></article>
  </section>
-<section class="panel spot-panel" id="spot-panel" aria-label="Interactive Bitcoin spot-price chart">
+ <section class="panel pulse-panel" data-views="overview" aria-label="Bitcoin network pulse">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon green-icon"><i data-icon="pulse"></i></span><h2>Network pulse</h2><span class="badge live-badge net-badge">CONNECTING</span></div><p>What the Bitcoin network is doing right now. Tap any tile to dig in.</p></div></div>
+ <div class="pulse-grid">
+ <button class="pulse-tile" data-goto="mining"><span class="pulse-label">LATEST BLOCK</span><strong id="pulse-height">—</strong><span id="pulse-height-note">—</span></button>
+ <button class="pulse-tile" data-goto="mempool"><span class="pulse-label">NEXT-BLOCK FEE</span><strong id="pulse-fee">—</strong><span id="pulse-fee-note">—</span></button>
+ <button class="pulse-tile" data-goto="mempool"><span class="pulse-label">MEMPOOL</span><strong id="pulse-mempool">—</strong><span id="pulse-mempool-note">—</span></button>
+ <button class="pulse-tile" data-goto="mining"><span class="pulse-label">HASHRATE</span><strong id="pulse-hash">—</strong><span id="pulse-hash-note">—</span></button>
+ <button class="pulse-tile" data-goto="mining"><span class="pulse-label">DIFFICULTY</span><strong id="pulse-diff">—</strong><span id="pulse-diff-note">—</span></button>
+ <button class="pulse-tile" data-goto="supply"><span class="pulse-label">NEXT HALVING</span><strong id="pulse-halving">—</strong><span id="pulse-halving-note">—</span></button>
+ <button class="pulse-tile" data-goto="learn"><span class="pulse-label">SATS PER DOLLAR</span><strong id="pulse-sats">—</strong><span id="pulse-sats-note">—</span></button>
+ <button class="pulse-tile" data-goto="lightning"><span class="pulse-label">MARKET CAP</span><strong id="pulse-cap">—</strong><span id="pulse-cap-note">—</span></button>
+ </div>
+ <div class="chart-footer"><span><span class="status-dot net-dot"></span><span class="net-status">Fetching network data</span></span><span>Data: mempool.space public API</span></div>
+ </section>
+
+ <div class="net-view" data-views="mempool">
+ <section class="explainer"><span class="explainer-icon">?</span><div><strong>In plain words</strong><p>Before a transaction is final it waits in the <em>mempool</em>, a shared waiting room. Miners pick the transactions paying the highest fee per unit of space (sat/vB) first, roughly one block every ten minutes. Pay more to jump the queue, or pay less and wait.</p></div></section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="coins"></i></span><h2>What it costs to send right now</h2><span class="badge live-badge net-badge">CONNECTING</span></div><p>Recommended fee rates and the estimated cost of a typical transaction.</p></div><label class="select-wrap"><span class="sr-only">Transaction type</span><select id="tx-type"><option value="141">Simple payment · 1 in, 2 out</option><option value="154">Taproot payment · 1 in, 2 out</option><option value="209">Two inputs · 2 in, 2 out</option><option value="722">Consolidation · 10 in, 1 out</option></select><i data-icon="chevron"></i></label></div>
+ <div class="fee-tiers" id="fee-tiers"></div>
+ <div class="chart-footer"><span><span class="status-dot net-dot"></span><span class="net-status">Fetching network data</span></span><span id="tx-size-note">Size estimate: native SegWit</span></div>
+ </section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="queue"></i></span><h2>The block queue</h2></div><p>Upcoming blocks built from the mempool (left), and the most recent blocks mined (right).</p></div></div>
+ <div class="block-rail" id="block-rail" tabindex="0" aria-label="Projected and recent blocks"></div>
+ <div class="rail-legend"><span><i class="fee-swatch" style="--c:hsl(210 70% 60%)"></i>cheap</span><span class="fee-gradient"></span><span><i class="fee-swatch" style="--c:hsl(0 75% 60%)"></i>expensive</span><span class="muted">colour = median fee rate</span></div>
+ </section>
+ <div class="net-grid two">
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon purple-icon"><i data-icon="layers"></i></span><h2>Mempool at a glance</h2></div><p>Everything currently waiting to be confirmed.</p></div></div>
+ <div class="stat-grid" id="mempool-stats"></div>
+ </section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon green-icon"><i data-icon="target"></i></span><h2>Where would my transaction land?</h2></div><p>Pick a fee rate and see how much is queued ahead of you.</p></div></div>
+ <div class="queue-tool"><div class="horizon-heading"><span>Your fee rate</span><strong id="queue-rate-label">—</strong></div><input id="queue-rate" type="range" min="0" max="1000" value="400" aria-label="Your fee rate, sat per virtual byte"><div class="queue-result" id="queue-result"></div><p class="fine-print">Estimate assumes no new higher-fee transactions arrive. Busy periods can push you back.</p></div>
+ </section>
+ </div>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="bars"></i></span><h2>Fee rate distribution</h2></div><p>How much block space is waiting at each fee rate. Each full block holds about 1 vMB.</p></div></div>
+ <div class="chart-container net-chart"><svg id="fee-hist" viewBox="0 0 1100 260" role="img" aria-label="Mempool size by fee rate"></svg><div class="tooltip" id="fee-hist-tip" hidden></div></div>
+ </section>
+ </div>
+
+ <div class="net-view" data-views="mining">
+ <section class="explainer"><span class="explainer-icon">?</span><div><strong>In plain words</strong><p>Miners race to find the next block by making trillions of guesses per second. <em>Hashrate</em> is how many guesses the whole network makes. Every 2,016 blocks (about two weeks) the <em>difficulty</em> resets so blocks keep arriving about every ten minutes, no matter how much hardware joins or leaves.</p></div></section>
+ <div class="net-grid stats-row" id="mining-cards"></div>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon green-icon"><i data-icon="cpu"></i></span><h2>Hashrate &amp; difficulty</h2><span class="badge">1 YEAR</span></div><p>Daily average network hashrate (orange) and mining difficulty (dashed).</p></div></div>
+ <div class="chart-container net-chart"><svg id="hash-chart" viewBox="0 0 1100 300" role="img" aria-label="Bitcoin hashrate and difficulty over the past year"></svg><div class="tooltip" id="hash-tip" hidden></div></div>
+ <div class="chart-footer"><span><span class="status-dot net-dot"></span><span class="net-status">Fetching network data</span></span><span>Hover to inspect</span></div>
+ </section>
+ <div class="net-grid two">
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="refresh"></i></span><h2>Next difficulty adjustment</h2></div><p>Progress through the current 2,016-block epoch.</p></div></div>
+ <div class="epoch" id="difficulty-epoch"></div>
+ </section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon purple-icon"><i data-icon="pie"></i></span><h2>Who found blocks this week</h2></div><p id="pools-sub">Share of blocks by mining pool, last 7 days.</p></div></div>
+ <div class="pool-list" id="pool-list"></div>
+ </section>
+ </div>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="cube"></i></span><h2>Recent blocks</h2></div><p>The newest blocks added to the chain.</p></div></div>
+ <div class="table-wrap"><table class="data-table" id="blocks-table"><thead><tr><th>Height</th><th>Mined</th><th>Pool</th><th class="num">Transactions</th><th class="num">Size</th><th class="num">Median fee</th><th class="num">Reward</th></tr></thead><tbody></tbody></table></div>
+ </section>
+ </div>
+
+ <div class="net-view" data-views="supply">
+ <section class="explainer"><span class="explainer-icon">?</span><div><strong>In plain words</strong><p>New bitcoin only enter circulation as the reward for mining a block. That reward is cut in half every 210,000 blocks (about four years). This <em>halving</em> means the supply approaches, but never exceeds, 21 million coins, with the last fraction mined around the year 2140.</p></div></section>
+ <section class="panel halving-panel">
+ <div class="halving-hero"><div><div class="eyebrow"><span class="tiny-square"></span> NEXT HALVING</div><div class="countdown" id="halving-countdown">—</div><p id="halving-eta">—</p></div><div class="halving-ring"><svg viewBox="0 0 120 120" id="halving-ring" aria-hidden="true"></svg><div><strong id="halving-pct">—</strong><span>of this epoch</span></div></div></div>
+ <div class="stat-grid wide" id="supply-stats"></div>
+ </section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="hourglass"></i></span><h2>The issuance curve</h2><span class="badge">2009 – 2070</span></div><p>Total bitcoin issued over time, with each halving marked by its new block reward. By 2070 over 99.9% exists; the last sliver trickles out until about 2140.</p></div></div>
+ <div class="chart-container net-chart"><svg id="supply-chart" viewBox="0 0 1100 300" role="img" aria-label="Bitcoin supply issuance schedule"></svg><div class="tooltip" id="supply-tip" hidden></div></div>
+ </section>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="calendar"></i></span><h2>Halving history</h2></div><p>Every reward era so far, and the next few to come. Future dates use the recent average block time.</p></div></div>
+ <div class="table-wrap"><table class="data-table" id="halving-table"><thead><tr><th>Era</th><th>Starts at block</th><th>Date</th><th class="num">Block reward</th><th class="num">Supply at start</th><th class="num">Share of 21M</th></tr></thead><tbody></tbody></table></div>
+ </section>
+ </div>
+
+ <div class="net-view" data-views="lightning">
+ <section class="explainer"><span class="explainer-icon">?</span><div><strong>In plain words</strong><p>Lightning is a network of payment channels built on top of Bitcoin. Two people lock some bitcoin in a channel once, then can pay each other (or anyone connected through other channels) instantly and for fractions of a cent. Only the opening and closing touch the main chain.</p></div></section>
+ <div class="net-grid stats-row" id="ln-cards"></div>
+ <section class="panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="zap"></i></span><h2>Public network capacity</h2><span class="badge">1 YEAR</span></div><p>Bitcoin locked in publicly announced Lightning channels.</p></div></div>
+ <div class="chart-container net-chart"><svg id="ln-chart" viewBox="0 0 1100 280" role="img" aria-label="Lightning network capacity over the past year"></svg><div class="tooltip" id="ln-tip" hidden></div></div>
+ <div class="chart-footer"><span><i data-icon="info"></i><span id="ln-asof">—</span></span><span>Public channels only. Private channels are not visible.</span></div>
+ </section>
+ <div class="net-grid two">
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon purple-icon"><i data-icon="globe"></i></span><h2>How nodes connect</h2></div><p>Share of public nodes by network type.</p></div></div><div class="pool-list" id="ln-nodes"></div></section>
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon green-icon"><i data-icon="coins"></i></span><h2>What a payment costs</h2></div><p>Using the median routing fee across public channels.</p></div></div><div class="stat-grid" id="ln-costs"></div></section>
+ </div>
+ </div>
+
+ <div class="net-view" data-views="learn">
+ <section class="panel converter-panel">
+ <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="swap"></i></span><h2>Converter</h2></div><p>Bitcoin, sats and your currency. Type in any box.</p></div><span class="badge live-badge net-badge">CONNECTING</span></div>
+ <div class="converter"><label><span>Bitcoin</span><div class="conv-input"><input id="conv-btc" inputmode="decimal" value="0.01" autocomplete="off"><em>BTC</em></div></label><span class="conv-eq">=</span><label><span>Satoshis</span><div class="conv-input"><input id="conv-sats" inputmode="numeric" autocomplete="off"><em>sats</em></div></label><span class="conv-eq">=</span><label><span>Fiat</span><div class="conv-input"><input id="conv-fiat" inputmode="decimal" autocomplete="off"><select id="conv-cur" aria-label="Currency"></select></div></label></div>
+ <p class="fine-print conv-note" id="conv-note">1 bitcoin = 100,000,000 satoshis (sats).</p>
+ </section>
+ <section class="learn-grid" id="learn-cards" aria-label="Bitcoin concepts"></section>
+ <div class="net-grid two">
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="hash"></i></span><h2>Numbers worth knowing</h2></div><p>The rules every node enforces.</p></div></div><div class="table-wrap"><table class="data-table facts" id="facts-table"><tbody></tbody></table></div></section>
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon purple-icon"><i data-icon="book"></i></span><h2>Glossary</h2></div><p>Jargon, decoded.</p></div></div><div class="glossary-search"><input id="glossary-q" type="search" placeholder="Search terms, e.g. UTXO" aria-label="Search glossary"></div><dl class="glossary" id="glossary"></dl></section>
+ </div>
+ </div>
+<section class="panel spot-panel" data-views="overview spot" id="spot-panel" aria-label="Interactive Bitcoin spot-price chart">
  <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="bitcoin"></i></span><h2>Bitcoin spot price</h2><span class="badge live-badge" id="spot-badge">CONNECTING</span></div><p>BTC / USD · Coinbase Exchange · Real market candles</p></div><button class="icon-button" id="spot-export" aria-label="Export spot-price candles as CSV"><i data-icon="download"></i></button></div>
  <div class="spot-summary"><div><span class="spot-price" id="spot-price">—</span><span class="spot-change" id="spot-change">—</span><span class="spot-change-label" id="spot-change-label">selected range</span></div><div class="spot-stats"><span>Range high <strong id="spot-high">—</strong></span><span>Range low <strong id="spot-low">—</strong></span></div></div>
  <div class="chart-toolbar spot-toolbar"><div class="segmented" id="spot-ranges" aria-label="Spot chart range"><button data-spot-range="1D" class="selected" aria-pressed="true">1D</button><button data-spot-range="1W" aria-pressed="false">1W</button><button data-spot-range="1M" aria-pressed="false">1M</button><button data-spot-range="1Y" aria-pressed="false">1Y</button></div><div class="spot-chart-tools"><div class="segmented" aria-label="Spot chart style"><button data-spot-mode="line" class="selected" aria-pressed="true">Line</button><button data-spot-mode="candles" aria-pressed="false">Candles</button></div><button class="icon-button zoom-button" id="spot-zoom-in" aria-label="Zoom in">+</button><button class="icon-button zoom-button" id="spot-zoom-out" aria-label="Zoom out">−</button><button class="button reset-button" id="spot-reset">Reset view</button></div></div>
@@ -45,7 +161,7 @@
  <div class="selection-hint" id="spot-selection-hint">Click or tap a price to pin it. Select a second price to compare.</div>
  <div class="chart-footer"><span><span class="status-dot" id="spot-status-dot"></span><span id="spot-status">Fetching recent prices</span></span><span>Scroll / pinch to zoom · Drag to pan</span></div>
 </section>
- <section class="panel chart-panel" id="main-panel">
+ <section class="panel chart-panel" data-views="overview power adjusted cycles" id="main-panel">
  <div class="panel-heading"><div><div class="title-line"><h2 id="chart-title">Bitcoin & the power law</h2><span class="badge">LONG-TERM</span></div><p id="chart-subtitle">Daily price against Bitcoin’s modeled growth trajectory.</p></div><button class="icon-button" id="export-chart" aria-label="Export chart as SVG"><i data-icon="download"></i></button></div>
  <div class="chart-toolbar"><div class="segmented" id="ranges" aria-label="Chart time range"><button data-range="1">1Y</button><button data-range="4">4Y</button><button data-range="8">8Y</button><button data-range="all" class="selected">All time</button></div><div class="chart-controls"><label class="select-wrap"><span class="sr-only">Price adjustment</span><select id="adjustment"><option value="nominal">Nominal USD</option><option value="real">CPI-adjusted USD</option></select><i data-icon="chevron"></i></label><div class="segmented scale-controls" aria-label="Price axis scale"><button data-scale="linear">Linear</button><button data-scale="log" class="selected">Log</button></div></div></div>
  <div class="main-zoom-toolbar"><span id="main-zoom-label">Scroll / pinch to zoom · Drag to pan · Click to pin</span><div class="zoom-actions"><button class="icon-button zoom-button" id="main-zoom-in" aria-label="Zoom in on power-law chart">+</button><button class="icon-button zoom-button" id="main-zoom-out" aria-label="Zoom out on power-law chart">−</button><button class="button reset-button" id="main-reset">Reset view</button></div></div>
@@ -54,14 +170,14 @@
  <div class="chart-inspector" id="main-inspector" hidden aria-live="polite"><div class="inspector-heading"><span class="selection-label">PINNED DATE</span><strong id="main-selected-date"></strong><button class="text-button" id="main-clear-selection">Clear selection ×</button></div><div class="inspector-values"><div><span id="main-price-label">Bitcoin price</span><strong id="main-selected-price"></strong></div><div><span>Fitted trend</span><strong id="main-selected-trend"></strong></div><div><span class="upper-label">Upper bound</span><strong id="main-selected-upper"></strong></div><div><span class="lower-label">Lower bound</span><strong id="main-selected-lower"></strong></div><div><span>Price / trend</span><strong id="main-selected-ratio"></strong></div></div></div>
  <div class="chart-footer"><span><i data-icon="info"></i><span id="history-note">Source: Coin Metrics · Daily observations</span></span><span>Hover to inspect price & bounds <span class="keycap">↔</span></span></div>
  </section>
- <div class="lower-grid">
+ <div class="lower-grid" data-views="overview power adjusted cycles">
  <section class="panel model-panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="trend"></i></span><h2>The power of time</h2></div><p>A model for perspective, built on Bitcoin’s history.</p></div><span class="badge blue-badge">POWER LAW</span></div><div class="model-content"><div class="model-equation">P(t) = <span id="coefficient">a</span> × t<sup id="exponent">b</sup></div><div class="model-caption">t = days since the genesis block · Jan 3, 2009</div><div class="model-stats"><div><span>Growth exponent</span><strong id="exponent-stat">—</strong></div><div><span>Log-space R²</span><strong id="r2-stat">—</strong></div><div><span>Observations</span><strong id="observations">—</strong></div></div><div class="horizon-heading"><span>Explore the model horizon</span><strong id="horizon-label">2030</strong></div><input id="horizon" type="range" min="2027" max="2040" value="2030" aria-label="Model horizon year"><div class="projection"><div><span>Modeled trend · Jan 1, <span id="projection-year">2030</span></span><strong id="projection-price">—</strong></div><span class="projection-icon">↗</span></div><p class="fine-print">An extrapolation of a historical fit. The historical envelope contains loaded prices, including cycle peaks. Future prices can move outside it.</p></div></section>
  <section class="panel cycle-panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="activity"></i></span><h2 id="mini-title">Every cycle has a story</h2></div><p id="mini-subtitle">The drawdowns behind the long-term ascent.</p></div><button class="text-button" id="cycle-view">Explore <span>↗</span></button></div><div class="mini-chart-container"><svg id="mini-chart" viewBox="0 0 510 174" role="img" aria-label="Bitcoin drawdown from its historical high"></svg></div><div class="cycle-stats"><div><span>Snapshot drawdown<span class="small-muted">at historical cutoff</span></span><strong id="drawdown">—</strong></div><div><span>All-time high<span class="small-muted" id="ath-date">—</span></span><strong id="ath-price">—</strong></div></div><div class="insight"><span class="insight-icon">✦</span><p id="insight-text">Perspective matters. Even Bitcoin’s strongest long-term trends include deep drawdowns.</p></div></section>
  </div>
- <section class="adjustment-strip"><div class="section-icon"><i data-icon="layers"></i></div><div><h3>A dollar isn’t what it used to be.</h3><p>Explore Bitcoin’s price in constant dollars using the U.S. Consumer Price Index.</p></div><button class="button" id="adjusted-view">See adjusted chart <span>↗</span></button></section>
- <footer class="footer"><span>OBSERVATORY <span>·</span> Built for the long view.</span><span>Historical models, not investment advice. <button id="sources">Data & methodology ↗</button></span></footer>
+ <section class="adjustment-strip" data-views="overview power adjusted cycles"><div class="section-icon"><i data-icon="layers"></i></div><div><h3>A dollar isn’t what it used to be.</h3><p>Explore Bitcoin’s price in constant dollars using the U.S. Consumer Price Index.</p></div><button class="button" id="adjusted-view">See adjusted chart <span>↗</span></button></section>
+ <footer class="footer"><span>OBSERVATORY <span>·</span> Built for the long view.</span><span>Market: Coinbase, Coin Metrics, BLS · Network: mempool.space</span><span>Historical models, not investment advice. <button id="sources">Data & methodology ↗</button></span></footer>
  </main>
 </div>
-<dialog id="method-dialog"><div class="dialog-header"><div><div class="eyebrow">UNDER THE HOOD</div><h2>Data & methodology</h2></div><button class="icon-button" id="close-dialog" aria-label="Close methodology"><i data-icon="close"></i></button></div><div class="dialog-body"><h3>Price history & live quote</h3><p id="data-detail">Loading source dates…</p><p>Historical daily USD prices and circulating supply come from <a href="https://github.com/coinmetrics/data/blob/master/csv/btc.csv" target="_blank" rel="noopener">Coin Metrics Community Data</a>. The spot quote and recent OHLC candles are fetched from <a href="https://docs.cdp.coinbase.com/exchange/reference/exchangerestapi_getproductticker" target="_blank" rel="noopener">Coinbase Exchange</a> (with Coinbase retail spot as a quote fallback) on load, every minute, and on refresh. If the request fails, the last stored quote or historical observation is shown with its timestamp. The spot chart refreshes recent exchange candles separately from the long-term history. Saved candles are clearly timestamped if the live endpoint is unavailable. A live quote does not extend the long-term historical chart.</p><h3>Power law</h3><p>We fit log₁₀(price) = intercept + exponent × log₁₀(days since January 3, 2009) to every positive daily observation. R² is measured in log space. The default historical envelope uses a power law fitted to record-setting local peaks (highest daily price within 365 observations on either side), shifted upward just enough to enclose every loaded daily price, with a small 0.005-log-unit margin. The lower curve uses the fitted trend shifted down to the lowest historical residual, with the same margin. The bounds are calibrated using the full history, not an out-of-sample prediction. Optional ±1σ and ±2σ bands use log-price residual standard deviations and may exclude extreme peaks. No band is a forecast confidence interval. The horizon slider extrapolates this same fit.</p><div class="method-settings"><label>Envelope / band mode <select id="band-width"><option value="envelope" selected>Full historical envelope</option><option value="1">± 1 residual σ</option><option value="2">± 2 residual σ</option></select></label><p id="envelope-coverage"></p></div><h3>Inflation adjustment</h3><p id="cpi-detail">U.S. CPI-U, all items, not seasonally adjusted (BLS series CUUR0000SA0). Each daily price is multiplied by the latest CPI value ÷ its month’s CPI. Beyond the latest CPI release, the latest available value is held constant.</p><p><a href="https://data.bls.gov/timeseries/CUUR0000SA0" target="_blank" rel="noopener">View the BLS source ↗</a></p><h3>Drawdown</h3><p>Daily price ÷ the highest price observed up to that date − 1. This uses daily observations, so intraday highs and lows can differ.</p></div></dialog>
+<dialog id="method-dialog"><div class="dialog-header"><div><div class="eyebrow">UNDER THE HOOD</div><h2>Data & methodology</h2></div><button class="icon-button" id="close-dialog" aria-label="Close methodology"><i data-icon="close"></i></button></div><div class="dialog-body"><h3>Price history & live quote</h3><p id="data-detail">Loading source dates…</p><p>Historical daily USD prices and circulating supply come from <a href="https://github.com/coinmetrics/data/blob/master/csv/btc.csv" target="_blank" rel="noopener">Coin Metrics Community Data</a>. The spot quote and recent OHLC candles are fetched from <a href="https://docs.cdp.coinbase.com/exchange/reference/exchangerestapi_getproductticker" target="_blank" rel="noopener">Coinbase Exchange</a> (with Coinbase retail spot as a quote fallback) on load, every minute, and on refresh. If the request fails, the last stored quote or historical observation is shown with its timestamp. The spot chart refreshes recent exchange candles separately from the long-term history. Saved candles are clearly timestamped if the live endpoint is unavailable. A live quote does not extend the long-term historical chart.</p><h3>Power law</h3><p>We fit log₁₀(price) = intercept + exponent × log₁₀(days since January 3, 2009) to every positive daily observation. R² is measured in log space. The default historical envelope uses a power law fitted to record-setting local peaks (highest daily price within 365 observations on either side), shifted upward just enough to enclose every loaded daily price, with a small 0.005-log-unit margin. The lower curve uses the fitted trend shifted down to the lowest historical residual, with the same margin. The bounds are calibrated using the full history, not an out-of-sample prediction. Optional ±1σ and ±2σ bands use log-price residual standard deviations and may exclude extreme peaks. No band is a forecast confidence interval. The horizon slider extrapolates this same fit.</p><div class="method-settings"><label>Envelope / band mode <select id="band-width"><option value="envelope" selected>Full historical envelope</option><option value="1">± 1 residual σ</option><option value="2">± 2 residual σ</option></select></label><p id="envelope-coverage"></p></div><h3>Inflation adjustment</h3><p id="cpi-detail">U.S. CPI-U, all items, not seasonally adjusted (BLS series CUUR0000SA0). Each daily price is multiplied by the latest CPI value ÷ its month’s CPI. Beyond the latest CPI release, the latest available value is held constant.</p><p><a href="https://data.bls.gov/timeseries/CUUR0000SA0" target="_blank" rel="noopener">View the BLS source ↗</a></p><h3>Network data</h3><p>Mempool, fee estimates, projected and recent blocks, difficulty, hashrate, mining pools, rewards, Lightning statistics and multi-currency prices come from the public <a href="https://mempool.space/docs/api/rest" target="_blank" rel="noopener">mempool.space REST API</a>. Fast-moving data refreshes every minute; hashrate, pools and Lightning every 15 minutes. If a request fails, the last good value or a timestamped saved snapshot (<code>network-snapshot.json</code>) is shown and labelled. Fee costs use typical native SegWit sizes (simple payment ≈ 141 vB). Queue-position estimates assume no new higher-fee transactions arrive. Circulating supply is computed exactly from the current block height and the issuance schedule; it does not subtract coins that are lost or provably unspendable. Future halving dates use the current epoch’s average block time (clamped to 8–12 minutes).</p><h3>Drawdown</h3><p>Daily price ÷ the highest price observed up to that date − 1. This uses daily observations, so intraday highs and lows can differ.</p></div></dialog>
 <div class="toast" role="status" id="toast" hidden></div>
 </body></html>
