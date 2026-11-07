@@ -44,6 +44,16 @@ def main():
         "lightningHistory": get("/v1/lightning/statistics/1y"),
         "prices": get("/v1/prices"),
     }
+    # mempool.space servers can disagree on Lightning stats (one may be months
+    # behind); never replace newer saved figures with an older answer.
+    try:
+        old = json.loads(OUT.read_text())
+        if old["lightning"]["latest"]["added"] > snap["lightning"]["latest"]["added"]:
+            snap["lightning"] = old["lightning"]
+        if max(d["added"] for d in old["lightningHistory"]) > max(d["added"] for d in snap["lightningHistory"]):
+            snap["lightningHistory"] = old["lightningHistory"]
+    except (OSError, KeyError, TypeError, ValueError):
+        pass
     OUT.write_text(json.dumps(snap, separators=(",", ":")))
     print(f"Wrote {OUT} ({OUT.stat().st_size:,} bytes) at block {snap['blocks'][0]['height']}")
 

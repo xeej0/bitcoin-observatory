@@ -71,12 +71,19 @@
  }
  const FAST = { fees: '/v1/fees/precise', mempool: '/mempool', mempoolBlocks: '/v1/fees/mempool-blocks', blocks: '/v1/blocks', difficulty: '/v1/difficulty-adjustment', prices: '/v1/prices' };
  const SLOW = { hashrate: '/v1/mining/hashrate/1y', pools: '/v1/mining/pools/1w', rewards: '/v1/mining/reward-stats/144', lightning: '/v1/lightning/statistics/latest', lightningHistory: '/v1/lightning/statistics/1y' };
+ /* mempool.space's servers can disagree on Lightning stats (one may be months behind),
+    so never let an older answer replace newer data, including the saved snapshot. */
+ const STAMPS = { lightning: v => Date.parse(v?.latest?.added) || 0, lightningHistory: v => Math.max(0, ...(Array.isArray(v) ? v.map(d => d.added || 0) : [])) * 1000 };
+ const stamp = (key, v) => STAMPS[key] ? STAMPS[key](v) : 0;
+ async function preferFresher(target) {
+  try { const snap = await snapshot(); for (const k of Object.keys(STAMPS)) if (stamp(k, snap[k]) > stamp(k, target[k])) target[k] = snap[k]; } catch { }
+ }
  async function loadGroup(spec, target) {
   const keys = Object.keys(spec);
   const results = await Promise.allSettled(keys.map(k => getJSON(spec[k])));
   let live = 0, snap = null;
   for (let i = 0; i < keys.length; i++) {
-   if (results[i].status === 'fulfilled') { target[keys[i]] = results[i].value; live++; continue; }
+   if (results[i].status === 'fulfilled') { if (!(stamp(keys[i], target[keys[i]]) > stamp(keys[i], results[i].value))) target[keys[i]] = results[i].value; live++; continue; }
    if (target[keys[i]]) continue; // keep the last good live value
    try { snap = snap || await snapshot(); target[keys[i]] = snap[keys[i]]; } catch { }
   }
@@ -90,6 +97,7 @@
    if (slowDue) jobs.push(loadGroup(SLOW, net.slow));
    const [fast, slow] = await Promise.all(jobs);
    net.fastLive = fast.partial; net.fastAt = fast.partial ? Date.now() : fast.snapAt || net.fastAt;
+   if (slow) await preferFresher(net.slow);
    if (slow) { net.slowLive = slow.partial; net.slowAt = slow.partial ? Date.now() : slow.snapAt || net.slowAt; }
    renderAll();
    if (manual && !fast.partial) window.notify?.('Network data unavailable. Showing the saved snapshot.');
@@ -167,7 +175,7 @@
   let ahead = 0; for (const [fr, vs] of hist) if (fr > r) ahead += vs;
   const blocks = Math.floor(ahead / 1e6) + 1, mins = blocks * blockMs() / 60000;
   $('queue-rate-label').textContent = rate(r) + ' sat/vB';
-  $('queue-rate').style.background = `linear-gradient(90deg,${feeColor(r)} ${Number($('queue-rate').value) / 10}%,#303844 ${Number($('queue-rate').value) / 10}%)`;
+  $('queue-rate').style.background = `linear-gradient(90deg,${feeColor(r)} ${Number($('queue-rate').value) / 10}%,#303844 ${Number($('queue-rate').value) / 10}%) center / 100% 4px no-repeat`;
   const below = net.fast.fees && r < net.fast.fees.minimumFee;
   $('queue-result').innerHTML = below ? `<strong class="down">Below the minimum relay fee</strong><p>Most nodes would not accept a transaction this cheap. Use at least ${rate(net.fast.fees.minimumFee)} sat/vB.</p>` :
    `<div><span>Queued ahead of you</span><strong>${(ahead / 1e6).toFixed(2)} vMB</strong></div><div><span>Likely block</span><strong>${blocks === 1 ? 'Next block' : '#' + blocks + ' in line'}</strong></div><div><span>Estimated wait</span><strong>${blocks === 1 ? '~10 min' : '~' + dur(mins * 60000)}</strong></div><div><span>Simple payment cost</span><strong>${p ? usd(r * 141 / COIN * p) : nf(r * 141) + ' sats'}</strong></div>`;
@@ -377,7 +385,8 @@
    ['Nodes', nf(l.node_count), 'publicly reachable'],
    ['Median channel', nf(l.med_capacity) + ' sats', p ? usd(l.med_capacity / COIN * p, 0) : '']
   ].map(c => `<div class="stat card"><span>${c[0]}</span><strong>${c[1]}</strong><em>${c[2]}</em></div>`).join('');
-  $('ln-asof').textContent = 'Network statistics as of ' + day(Date.parse(l.added)) + ' · mempool.space';
+  const lnAge = (Date.now() - Date.parse(l.added)) / 86400000;
+  $('ln-asof').textContent = 'Network statistics as of ' + day(Date.parse(l.added)) + ' · mempool.space' + (lnAge > 14 ? ' · no newer figures published yet' : '');
   if (hist?.length) {
    const all = [...hist].sort((a, b) => a.added - b.added).map(d => ({ t: d.added * 1000, v: d.total_capacity / COIN, ch: d.channel_count }));
    /* drop obviously broken rows (e.g. partial crawls reporting a fraction of the network) */
@@ -478,6 +487,14 @@
  $('block-rail').addEventListener('pointerdown', () => $('block-rail').dataset.touched = 1);
  $('block-rail').addEventListener('wheel', () => $('block-rail').dataset.touched = 1, { passive: true });
  $('queue-rate').addEventListener('input', renderQueue);
+ /* Drag anywhere on the bar (iOS Safari will not move a range input from a touch on its track). */
+ (() => {
+  const el = $('queue-rate'); let dragging = false;
+  const setFrom = e => { const r = el.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); el.value = Math.round(f * 1000); renderQueue(); };
+  el.addEventListener('pointerdown', e => { dragging = true; el.setPointerCapture?.(e.pointerId); setFrom(e); e.preventDefault(); });
+  el.addEventListener('pointermove', e => { if (dragging) setFrom(e); });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(t, () => dragging = false);
+ })();
  document.addEventListener('click', e => { const b = e.target.closest('[data-goto]'); if (!b) return; window.setView?.(b.dataset.goto); window.scrollTo({ top: 0, behavior: 'smooth' }); });
  window.onNetworkView = () => { if (net.fastAt) requestAnimationFrame(renderAll); };
  const prevQuote = window.onSpotQuote; // spot.js loads first; chain onto its hook
