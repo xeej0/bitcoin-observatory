@@ -16,6 +16,20 @@ Serve `dist/` with any static HTTP server. There is no build step or production 
 | Network | Lightning | Public capacity, channels, nodes, Tor/clearnet split and what a payment costs vs. on-chain |
 | Learn | Bitcoin 101 | BTC / sats / fiat converter, concept cards linking to live views, protocol numbers and a searchable glossary |
 
+## Staying current, automatically
+
+The site needs no server and no manual updates:
+
+- **Daily job** (`.github/workflows/update-data.yml`, 01:17 UTC) runs `scripts/update-data.py` and `scripts/snapshot-network.py`, then commits any changes to `main`, which Vercel redeploys. It appends Coinbase daily closes for each completed UTC day, refreshes CPI (BLS, FRED fallback) and recomputes supply from the latest block. A failing source never deletes data; previous values are kept.
+- **Self-healing in the browser**: if `data.json` is ever behind, the page fills the gap from Coinbase daily candles on load, so the long-term chart is always current.
+- Coin Metrics Community Data stopped publishing `PriceUSD` after 2026-05-23; history up to then is Coin Metrics, after that Coinbase.
+
+Run the updater by hand with `python3 scripts/update-data.py`, or trigger the workflow from the Actions tab.
+
+## Mobile
+
+Below 720px the sidebar becomes a bottom tab bar (Overview, Price, Fees, Mining, More) with a sheet for every view, the header is sticky, charts redraw in a phone-sized frame with legible type, and the site can be added to the home screen (`manifest.webmanifest`).
+
 ## Network data
 
 Network views use the public [mempool.space REST API](https://mempool.space/docs/api/rest) directly from the browser. Fast data (fees, mempool, blocks, difficulty, prices) refreshes every minute; hashrate, pools, rewards and Lightning every 15 minutes. When a request fails, the last good value or the timestamped fallback `dist/network-snapshot.json` is shown and labelled. Refresh the fallback with:
@@ -28,7 +42,7 @@ Circulating supply is computed exactly from block height and the issuance schedu
 
 ## Market data
 
-Historical dataset: Coin Metrics Community Data, daily observations from 2010-07-18 through 2026-05-23. CPI source: BLS CUUR0000SA0, monthly observations from January 2010 through August 2026. Missing CPI months use the last available prior observation. Coinbase Exchange spot quotes and candles refresh every minute in the browser; failure is visibly labeled and falls back to a recent cached quote or the historical snapshot. A spot quote does not extend the historical series.
+Historical dataset: Coin Metrics Community Data, daily observations from 2010-07-18 through 2026-05-23, extended daily with Coinbase Exchange closes. CPI source: BLS CUUR0000SA0, monthly observations from January 2010 through August 2026. Missing CPI months use the last available prior observation. Coinbase Exchange spot quotes and candles refresh every minute in the browser; failure is visibly labeled and falls back to a recent cached quote or the historical snapshot. A spot quote does not extend the historical series.
 
 The default envelope is calibrated to contain every loaded historical price, including record-setting cycle peaks; it is not a forecast interval. Optional statistical bands use historical residual standard deviations and may exclude peaks. The upper curve fits record-setting local maxima within ±365 daily observations, then shifts to clear the maximum historical residual. The lower curve shifts the central fit below its minimum historical residual. Both use a 0.005-log-unit margin. Recent spot charts fetch public Coinbase Exchange OHLC data (5-minute, hourly, 6-hour, daily resolutions) and support zoom, pan, crosshairs, line/candle display, and CSV export. Unavailable market data falls back to timestamped saved candles in `spot-snapshot.json`. The methodology dialog documents the exact formulas and sources.
 
