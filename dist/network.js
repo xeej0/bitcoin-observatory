@@ -451,14 +451,16 @@
   if (list.join() === have.join()) return;
   const cur = sel.value || 'USD'; sel.innerHTML = list.map(c => `<option${c === cur ? ' selected' : ''}>${c}</option>`).join('');
  }
- const parseNum = v => Number(String(v).replace(/[,\s_]/g, ''));
+ const parseNum = v => Number(String(v).replace(/[,\s_$€£¥₿]/g, ''));
  function convert(from = conv.last) {
   conv.last = from; const r = rates()[$('conv-cur').value]; let b;
   if (from === 'btc') b = parseNum($('conv-btc').value);
   else if (from === 'sats') b = parseNum($('conv-sats').value) / COIN;
   else b = r ? parseNum($('conv-fiat').value) / r : NaN;
-  if (!Number.isFinite(b)) return;
-  if (from !== 'btc') $('conv-btc').value = +b.toFixed(8);
+  const fields = { btc: 'conv-btc', sats: 'conv-sats', fiat: 'conv-fiat' };
+  if (!$(fields[from]).value.trim()) { for (const k in fields) if (k !== from) $(fields[k]).value = ''; return; }
+  if (!Number.isFinite(b) || b < 0) return;
+  if (from !== 'btc') $('conv-btc').value = b.toFixed(8).replace(/\.?0+$/, '');
   if (from !== 'sats') $('conv-sats').value = nf(Math.round(b * COIN));
   if (from !== 'fiat' && r) $('conv-fiat').value = (b * r).toFixed(b * r < 1 ? 4 : 2);
   $('conv-note').textContent = r ? `1 BTC = ${nf(r, 0)} ${$('conv-cur').value} · 1 ${$('conv-cur').value} = ${nf(COIN / r, 0)} sats · ${(typeof quote !== 'undefined' && quote?.price && $('conv-cur').value === 'USD') ? 'Coinbase spot' : 'mempool.space price index'}` : '1 bitcoin = 100,000,000 satoshis (sats).';
