@@ -69,7 +69,7 @@
   if (!net.snapshot) net.snapshot = fetch('network-snapshot.json').then(r => { if (!r.ok) throw Error('No snapshot'); return r.json(); });
   return net.snapshot;
  }
- const FAST = { fees: '/v1/fees/recommended', mempool: '/mempool', mempoolBlocks: '/v1/fees/mempool-blocks', blocks: '/v1/blocks', difficulty: '/v1/difficulty-adjustment', prices: '/v1/prices' };
+ const FAST = { fees: '/v1/fees/precise', mempool: '/mempool', mempoolBlocks: '/v1/fees/mempool-blocks', blocks: '/v1/blocks', difficulty: '/v1/difficulty-adjustment', prices: '/v1/prices' };
  const SLOW = { hashrate: '/v1/mining/hashrate/1y', pools: '/v1/mining/pools/1w', rewards: '/v1/mining/reward-stats/144', lightning: '/v1/lightning/statistics/latest', lightningHistory: '/v1/lightning/statistics/1y' };
  async function loadGroup(spec, target) {
   const keys = Object.keys(spec);
@@ -222,7 +222,8 @@
   let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * .12 || hi * .1; lo = Math.max(0, lo - pad); hi += pad;
   const x = t => left + (t - t0) / (t1 - t0 || 1) * pw, y = v => top + (hi - v) / (hi - lo) * ph;
   let out = `<defs><linearGradient id="${svgId}-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${opts.color}" stop-opacity=".18"/><stop offset="1" stop-color="${opts.color}" stop-opacity="0"/></linearGradient></defs>`;
-  for (const v of niceTicks(lo, hi, 4)) { const yy = y(v); out += `<line x1="${left}" x2="${left + pw}" y1="${yy}" y2="${yy}" stroke="#28303b" stroke-dasharray="3 5"/>` + text(W - right + 10, yy + 3, opts.fmt(v)); }
+  const tagY = y(series.at(-1).v);
+  for (const v of niceTicks(lo, hi, 4)) { const yy = y(v); out += `<line x1="${left}" x2="${left + pw}" y1="${yy}" y2="${yy}" stroke="#28303b" stroke-dasharray="3 5"/>` + (Math.abs(yy - tagY) < (mobile ? 26 : 18) ? '' : text(W - right + 10, yy + 3, opts.fmt(v))); }
   for (let i = 0; i <= (mobile ? 3 : 6); i++) { const t = t0 + (t1 - t0) * i / (mobile ? 3 : 6); out += text(x(t), H - (mobile ? 12 : 9), new Date(t).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }), i === 0 ? 'start' : i === (mobile ? 3 : 6) ? 'end' : 'middle'); }
   if (opts.secondary?.length) {
    const sv = opts.secondary.map(p => p.v), slo = Math.min(...sv) * .9, shi = Math.max(...sv) * 1.05, sy = v => top + (shi - v) / (shi - slo) * ph;
