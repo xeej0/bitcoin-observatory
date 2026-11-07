@@ -69,7 +69,7 @@
   if (!net.snapshot) net.snapshot = fetch('network-snapshot.json').then(r => { if (!r.ok) throw Error('No snapshot'); return r.json(); });
   return net.snapshot;
  }
- const FAST = { fees: '/v1/fees/recommended', mempool: '/mempool', mempoolBlocks: '/v1/fees/mempool-blocks', blocks: '/v1/blocks', difficulty: '/v1/difficulty-adjustment', prices: '/v1/prices' };
+ const FAST = { fees: '/v1/fees/precise', mempool: '/mempool', mempoolBlocks: '/v1/fees/mempool-blocks', blocks: '/v1/blocks', difficulty: '/v1/difficulty-adjustment', prices: '/v1/prices' };
  const SLOW = { hashrate: '/v1/mining/hashrate/1y', pools: '/v1/mining/pools/1w', rewards: '/v1/mining/reward-stats/144', lightning: '/v1/lightning/statistics/latest', lightningHistory: '/v1/lightning/statistics/1y' };
  async function loadGroup(spec, target) {
   const keys = Object.keys(spec);

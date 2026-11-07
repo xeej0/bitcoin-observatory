@@ -32,7 +32,7 @@ def slim_block(b):
 def main():
     snap = {
         "fetched": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "fees": get("/v1/fees/recommended"),
+        "fees": get("/v1/fees/precise"),
         "mempool": get("/mempool"),
         "mempoolBlocks": get("/v1/fees/mempool-blocks"),
         "blocks": [slim_block(b) for b in get("/v1/blocks")],
