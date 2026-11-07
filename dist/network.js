@@ -222,7 +222,8 @@
   let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * .12 || hi * .1; lo = Math.max(0, lo - pad); hi += pad;
   const x = t => left + (t - t0) / (t1 - t0 || 1) * pw, y = v => top + (hi - v) / (hi - lo) * ph;
   let out = `<defs><linearGradient id="${svgId}-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${opts.color}" stop-opacity=".18"/><stop offset="1" stop-color="${opts.color}" stop-opacity="0"/></linearGradient></defs>`;
-  for (const v of niceTicks(lo, hi, 4)) { const yy = y(v); out += `<line x1="${left}" x2="${left + pw}" y1="${yy}" y2="${yy}" stroke="#28303b" stroke-dasharray="3 5"/>` + text(W - right + 10, yy + 3, opts.fmt(v)); }
+  const tagY = y(series.at(-1).v);
+  for (const v of niceTicks(lo, hi, 4)) { const yy = y(v); out += `<line x1="${left}" x2="${left + pw}" y1="${yy}" y2="${yy}" stroke="#28303b" stroke-dasharray="3 5"/>` + (Math.abs(yy - tagY) < (mobile ? 26 : 18) ? '' : text(W - right + 10, yy + 3, opts.fmt(v))); }
   for (let i = 0; i <= (mobile ? 3 : 6); i++) { const t = t0 + (t1 - t0) * i / (mobile ? 3 : 6); out += text(x(t), H - (mobile ? 12 : 9), new Date(t).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }), i === 0 ? 'start' : i === (mobile ? 3 : 6) ? 'end' : 'middle'); }
   if (opts.secondary?.length) {
    const sv = opts.secondary.map(p => p.v), slo = Math.min(...sv) * .9, shi = Math.max(...sv) * 1.05, sy = v => top + (shi - v) / (shi - slo) * ph;
