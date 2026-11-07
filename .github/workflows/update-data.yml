@@ -37,4 +37,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add dist/data.json dist/network-snapshot.json
           git commit -m "Update data $(date -u +%F)"
+          # main may have moved since checkout (e.g. a merged PR); replay on top
+          git pull --rebase origin main
           git push
