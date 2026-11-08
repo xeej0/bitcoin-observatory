@@ -10,6 +10,7 @@ Serve `dist/` with any static HTTP server. There is no build step or production 
 | --- | --- | --- |
 | Market | Overview | Price metrics, a live **network pulse** (block height, next-block fee, mempool, hashrate, difficulty, halving countdown, sats per dollar, market cap), spot and long-term charts |
 | Market | Spot price · Power law · Adjusted price · Market cycles | Interactive charts described below |
+| Market | Buy signal | A 0–100 historical valuation score (power-law position, Mayer multiple, drawdown from peak, each ranked against all prior history), its zone, and a no-lookahead backtest of 1- and 2-year returns by zone. Logic in `dist/signal.js`. Not financial advice. |
 | Network | Mempool & fees | Fee tiers with the dollar cost of common transaction types, projected vs. just-mined blocks coloured by fee rate, mempool totals, a "where would my transaction land?" slider, and the fee-rate distribution |
 | Network | Blocks & mining | 1-year hashrate (7-day average) and difficulty, next difficulty adjustment, weekly mining-pool share, hashprice and recent blocks |
 | Network | Supply & halving | Halving countdown, exact issued supply from the current block height, inflation and stock-to-flow, the issuance curve and every reward era |
