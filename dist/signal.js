@@ -80,7 +80,9 @@
   const y0 = new Date(t0).getUTCFullYear() + 1, y1 = new Date(t1).getUTCFullYear(), step = mobile ? 3 : 2;
   for (let yr = y0; yr <= y1; yr += step) out += `<text x="${x(Date.UTC(yr, 0, 1))}" y="${H - 8}" text-anchor="middle" fill="#8a94a3" font-family="IBM Plex Mono,monospace" font-size="${fs}">${yr}</text>`;
   const s = c.score[c.n - 1]; out += `<circle cx="${x(t1)}" cy="${y(s)}" r="4" fill="${zoneOf(s).color}" stroke="#111419" stroke-width="2"/>`;
+  out += `<g class="sig-hover" style="display:none"><line y1="${top}" y2="${top + ph}" stroke="#707b8e" stroke-dasharray="3 4"/><circle r="5" stroke="#111419" stroke-width="2"/></g>`;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = out;
+  hist = { x, y, t0, t1, first, left, pw, W, H, pts, c };
  }
 
  function render() {
@@ -103,6 +105,30 @@
   $s('signal-backtest').querySelector('tbody').innerHTML = ZONES.map((z, k) => { const s = cache.stats[k], lo = k ? ZONES[k - 1].max : 0; return `<tr class="${z === zone ? 'current' : ''}"><td><span class="fee-chip" style="--c:${z.color}"></span>${z.name}${z === zone ? '<span class="badge">NOW</span>' : ''}</td><td class="num">${lo}–${Math.min(100, z.max)}</td><td class="num">${s.days.toLocaleString()}</td><td class="num">${cell(s.med1, pctFmt)}</td><td class="num">${cell(s.pos1, v => Math.round(v * 100) + '%')}</td><td class="num">${cell(s.worst1, pctFmt)}</td><td class="num">${cell(s.med2, pctFmt)}</td><td class="num">${cell(s.pos2, v => Math.round(v * 100) + '%')}</td></tr>`; }).join('');
   history(cache, points);
  }
+ let hist = null, hoverIdx = null;
+ function showAt(i) {
+  const h = hist; if (!h) return; i = Math.max(h.first, Math.min(h.c.n - 1, i)); hoverIdx = i;
+  const svg = $s('signal-history'), g = svg.querySelector('.sig-hover'), tip = $s('signal-tip'), p = h.pts[i], sc = h.c.score[i], z = zoneOf(sc);
+  const cx = h.x(p.t), cy = h.y(sc); g.style.display = ''; const ln = g.querySelector('line'), dot = g.querySelector('circle');
+  ln.setAttribute('x1', cx); ln.setAttribute('x2', cx); dot.setAttribute('cx', cx); dot.setAttribute('cy', cy); dot.setAttribute('fill', z.color);
+  const later = i + 365 < h.c.n ? h.pts[i + 365].p / p.p - 1 : null;
+  tip.innerHTML = `<strong>${dateLabel(p.t)}</strong><p>Score<b style="color:${z.color}">${Math.round(sc)} · ${z.name}</b></p><p>Price<b>${money(p.p)}</b></p>${later === null ? '' : `<p>1 year later<b style="color:${later >= 0 ? '#83d5a3' : '#df8b8b'}">${pctFmt(later)}</b></p>`}`;
+  tip.hidden = false; const box = svg.getBoundingClientRect(), wrap = svg.parentElement.getBoundingClientRect(), px = (cx / h.W) * box.width + box.left - wrap.left;
+  tip.style.left = Math.min(Math.max(8, px + 14), wrap.width - tip.offsetWidth - 8) + 'px'; const py = (cy / h.H) * box.height + box.top - wrap.top; tip.style.top = Math.max(4, Math.min(py < wrap.height / 2 ? py + 14 : py - tip.offsetHeight - 14, wrap.height - tip.offsetHeight - 4)) + 'px';
+ }
+ function hideTip() { hoverIdx = null; const g = $s('signal-history')?.querySelector('.sig-hover'); if (g) g.style.display = 'none'; const t = $s('signal-tip'); if (t) t.hidden = true; }
+ function idxAt(e) { const h = hist, box = $s('signal-history').getBoundingClientRect(), vx = (e.clientX - box.left) / box.width * h.W, t = h.t0 + (vx - h.left) / h.pw * (h.t1 - h.t0); return Math.round((t - h.pts[0].t) / DAY); }
+ (() => {
+  const svg = $s('signal-history'); if (!svg) return;
+  svg.setAttribute('tabindex', '0'); svg.style.touchAction = 'pan-y';
+  svg.addEventListener('pointermove', e => hist && showAt(idxAt(e)));
+  svg.addEventListener('pointerdown', e => hist && showAt(idxAt(e)));
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideTip(); });
+  svg.addEventListener('keydown', e => { if (!hist) return; const step = e.shiftKey ? 365 : 30;
+   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); showAt((hoverIdx ?? hist.c.n - 1) + (e.key === 'ArrowRight' ? step : -step)); }
+   else if (e.key === 'Escape') hideTip(); });
+  svg.addEventListener('blur', hideTip);
+ })();
  window.renderSignal = render;
  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150); });
 })();
