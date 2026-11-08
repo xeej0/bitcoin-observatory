@@ -9,7 +9,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css"><script src="chart-gestures.js" defer></script><script src="app.js" defer></script><script src="spot.js" defer></script><script src="network.js" defer></script>
+<link rel="stylesheet" href="style.css"><script src="chart-gestures.js" defer></script><script src="app.js" defer></script><script src="spot.js" defer></script><script src="network.js" defer></script><script src="signal.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to dashboard</a>
@@ -22,6 +22,7 @@
  <button class="nav-item" data-view="power"><i data-icon="trend"></i>Power law<span class="nav-tag">β</span></button>
  <button class="nav-item" data-view="adjusted"><i data-icon="layers"></i>Adjusted price</button>
  <button class="nav-item" data-view="cycles"><i data-icon="activity"></i>Market cycles</button>
+ <button class="nav-item" data-view="signal"><i data-icon="target"></i>Buy signal</button>
  <div class="nav-label">NETWORK</div>
  <button class="nav-item" data-view="mempool"><i data-icon="queue"></i>Mempool &amp; fees<span class="live-pip" title="Live data"></span></button>
  <button class="nav-item" data-view="mining"><i data-icon="cpu"></i>Blocks &amp; mining</button>
@@ -45,6 +46,7 @@
  <article class="metric"><div class="metric-label">PRICE / TREND <i data-icon="compass"></i></div><div class="metric-value" id="ratio-value">—</div><div class="metric-bottom"><span id="ratio-note">At last daily close</span><div class="mini-range"><span id="ratio-marker"></span></div></div></article>
  <article class="metric"><div class="metric-label">CIRCULATING SUPPLY <i data-icon="globe"></i></div><div class="metric-value" id="supply-value">—</div><div class="metric-bottom"><span id="supply-note">of 21 million BTC</span><span class="supply-icon">◔</span></div></article>
  </section>
+<button class="signal-card" id="signal-card" data-views="overview" data-goto="signal" aria-label="Open the buy signal"><span class="section-icon"><i data-icon="target"></i></span><span class="signal-card-body"><span class="signal-card-label">BUY SIGNAL · HISTORICAL VALUATION</span><span><strong id="signal-card-score">—</strong> <b id="signal-card-zone">Loading</b></span><em id="signal-card-note"></em></span><i data-icon="chevron" class="signal-card-go"></i></button>
  <section class="panel pulse-panel" data-views="overview" aria-label="Bitcoin network pulse">
  <div class="panel-heading"><div><div class="title-line"><span class="section-icon green-icon"><i data-icon="pulse"></i></span><h2>Network pulse</h2><span class="badge live-badge net-badge">CONNECTING</span></div><p>What the Bitcoin network is doing right now. Tap any tile to dig in.</p></div></div>
  <div class="pulse-grid">
@@ -154,6 +156,20 @@
  <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon purple-icon"><i data-icon="book"></i></span><h2>Glossary</h2></div><p>Jargon, decoded.</p></div></div><div class="glossary-search"><input id="glossary-q" type="search" placeholder="Search terms, e.g. UTXO" aria-label="Search glossary"></div><dl class="glossary" id="glossary" tabindex="0" aria-label="Glossary"></dl></section>
  </div>
  </div>
+<div class="net-view" data-views="signal">
+ <section class="explainer"><span class="explainer-icon">?</span><div><strong>In plain words</strong><p>This score compares today’s price with every day of Bitcoin’s history using three classic valuation measures. A low score means Bitcoin is cheap by its own standards, a high score means it is stretched. Below it is the evidence: what actually happened a year or two after buying in each zone. It is a historical guide, not a prediction or financial advice.</p></div></section>
+ <section class="panel signal-hero">
+  <div class="signal-dial"><svg id="signal-gauge" viewBox="0 0 200 110" aria-hidden="true"></svg><div class="signal-dial-value"><strong id="signal-score">—</strong><span>of 100</span></div></div>
+  <div class="signal-text"><div class="eyebrow"><span class="tiny-square"></span> CURRENT READING</div><h2 id="signal-zone">Loading</h2><p id="signal-read"></p><p class="muted small" id="signal-basis"></p></div>
+ </section>
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon blue-icon"><i data-icon="bars"></i></span><h2>What goes into the score</h2></div><p>Each measure is ranked against all of Bitcoin’s history (0 = cheapest day on record, 100 = most expensive). The score is their average.</p></div></div><div class="signal-components" id="signal-components"></div></section>
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="calendar"></i></span><h2>Did it work? The backtest</h2><span class="badge">2013 – TODAY</span></div><p>For every day since 2013, the score was computed using only data available that day. Then we looked at the price one and two years later.</p></div></div>
+  <div class="table-wrap"><table class="data-table" id="signal-backtest"><thead><tr><th>Zone</th><th class="num">Score</th><th class="num">Days</th><th class="num">1Y median</th><th class="num">1Y up</th><th class="num">1Y worst</th><th class="num">2Y median</th><th class="num">2Y up</th></tr></thead><tbody></tbody></table></div>
+  <div class="chart-footer"><span><i data-icon="info"></i><span>“Up” = share of days where buying led to a gain. Past cycles may not repeat, and the early years had far bigger moves than today’s market.</span></span></div>
+ </section>
+ <section class="panel"><div class="panel-heading"><div><div class="title-line"><span class="section-icon"><i data-icon="activity"></i></span><h2>The score through history</h2></div><p>Each cycle’s cheap and overheated stretches, measured the same way.</p></div></div><div class="chart-container net-chart"><svg id="signal-history" viewBox="0 0 1100 240" role="img" aria-label="Buy signal score over time"></svg></div></section>
+ <section class="explainer"><span class="explainer-icon">!</span><div><strong>Use it wisely</strong><p>No model knows the future. Many people use a signal like this to adjust the pace of steady, scheduled buying (buying more in value zones, less when overheated) rather than to time a single all-in moment. Only invest what you can afford to hold through a 70%+ drop, which has happened in every cycle so far. This is not financial advice.</p></div></section>
+</div>
 <section class="panel spot-panel" data-views="overview spot" id="spot-panel" aria-label="Interactive Bitcoin spot-price chart">
  <div class="panel-heading"><div><div class="title-line"><span class="section-icon orange-icon"><i data-icon="bitcoin"></i></span><h2>Bitcoin spot price</h2><span class="badge live-badge" id="spot-badge">CONNECTING</span></div><p>BTC / USD · Coinbase Exchange · Real market candles</p></div><button class="icon-button" id="spot-export" aria-label="Export spot-price candles as CSV"><i data-icon="download"></i></button></div>
  <div class="spot-summary"><div><span class="spot-price" id="spot-price">—</span><span class="spot-change" id="spot-change">—</span><span class="spot-change-label" id="spot-change-label">selected range</span></div><div class="spot-stats"><span>Range high <strong id="spot-high">—</strong></span><span>Range low <strong id="spot-low">—</strong></span></div></div>
@@ -189,7 +205,7 @@
  <button class="tab" id="more-tab" aria-haspopup="dialog"><i data-icon="more"></i><span>More</span></button>
 </nav>
 <dialog id="more-sheet" class="sheet" aria-label="All views"><div class="sheet-grip"></div><div class="sheet-head"><strong>Explore</strong><button class="icon-button" id="more-close" aria-label="Close"><i data-icon="close"></i></button></div>
- <div class="sheet-group"><span>MARKET</span><button data-view="overview"><i data-icon="grid"></i>Overview</button><button data-view="spot"><i data-icon="bitcoin"></i>Spot price</button><button data-view="power"><i data-icon="trend"></i>Power law</button><button data-view="adjusted"><i data-icon="layers"></i>Adjusted price</button><button data-view="cycles"><i data-icon="activity"></i>Market cycles</button></div>
+ <div class="sheet-group"><span>MARKET</span><button data-view="overview"><i data-icon="grid"></i>Overview</button><button data-view="spot"><i data-icon="bitcoin"></i>Spot price</button><button data-view="power"><i data-icon="trend"></i>Power law</button><button data-view="adjusted"><i data-icon="layers"></i>Adjusted price</button><button data-view="cycles"><i data-icon="activity"></i>Market cycles</button><button data-view="signal"><i data-icon="target"></i>Buy signal</button></div>
  <div class="sheet-group"><span>NETWORK</span><button data-view="mempool"><i data-icon="queue"></i>Mempool &amp; fees</button><button data-view="mining"><i data-icon="cpu"></i>Blocks &amp; mining</button><button data-view="supply"><i data-icon="hourglass"></i>Supply &amp; halving</button><button data-view="lightning"><i data-icon="zap"></i>Lightning</button></div>
  <div class="sheet-group"><span>LEARN &amp; TOOLS</span><button data-view="learn"><i data-icon="spark"></i>Bitcoin 101</button><button id="more-method"><i data-icon="book"></i>Methodology</button><button id="more-export"><i data-icon="download"></i>Export CSV</button></div>
 </dialog>
