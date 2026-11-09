@@ -54,7 +54,8 @@
  function today(c, pts, spot) {
   const i = c.n - 1, p = spot || pts[i].p, t = spot ? Date.now() : pts[i].t;
   const x = Math.log10((t - G) / DAY), pl = Math.log10(p) - (c.fa[0] + c.fa[1] * x);
-  let s200 = 0; for (let k = i - 198; k <= i; k++) s200 += pts[k].p; const ma = p / ((s200 + p) / 200);
+  // 200 values: the latest price plus the 199 closes before it (the last close itself when no live quote).
+  const end = spot ? i : i - 1; let s200 = 0; for (let k = end - 198; k <= end; k++) s200 += pts[k].p; const ma = p / ((s200 + p) / 200);
   const ath = Math.max(...pts.map(q => q.p), p), dd = p / ath - 1;
   const r = { pl: rankIn(c.sorted.pl, pl), ma: rankIn(c.sorted.ma, ma), dd: rankIn(c.sorted.dd, dd) };
   return { score: 100 * (r.pl + r.ma + r.dd) / 3, r, pl, ma, dd, p, trend: p / 10 ** pl };
